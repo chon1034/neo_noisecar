@@ -17,5 +17,8 @@
     "url": "https://github.com/chon1034/neo_noisecar/issues"
   },
   "homepage": "https://github.com/chon1034/neo_noisecar#readme",
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
 }
