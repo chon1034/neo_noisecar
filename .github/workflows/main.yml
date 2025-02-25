@@ -34,9 +34,8 @@ jobs:
             if [ ! -d ".git" ]; then
               git clone https://github.com/chon1034/neo_noisecar.git .
             else
-              git fetch origin
-              git reset --hard origin/main
-              git clean -fd  # 可選，移除未追蹤的檔案
+              git reset --hard HEAD
+              git pull origin main --force
             fi
             
             if [ ! -f "package.json" ]; then
