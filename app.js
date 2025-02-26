@@ -104,12 +104,14 @@ app.post('/upload', upload.fields([
     fs.writeFileSync(outputDocx, buf);
     console.log('DOCX 合併完成:', outputDocx);
 
-    // 直接下載合併後的 DOCX 檔案，確保副檔名為 .docx
+    // 直接下載合併後的 DOCX 檔案，並先設定正確的 Content-Type
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
     res.download(outputDocx, 'merged.docx', (err) => {
       if (err) {
         console.error('下載錯誤:', err);
       }
     });
+
   } catch (err) {
     console.error('伺服器錯誤:', err);
     res.status(500).send('伺服器錯誤');
