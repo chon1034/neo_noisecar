@@ -92,6 +92,18 @@ app.post('/upload', upload.fields([
     // 違反時間：{{違反時間}}
     // <w:p><w:r><w:br w:type="page"/></w:r></w:p>
     // {/records}
+    // 2. 根據「態樣」欄位產生「違反事實」
+    records = records.map(record => {
+      if (record.態樣 === '超標') {
+        record['違反事實'] = `相對人所有車輛(車號:${record['車牌號碼']})於${record['違反時間']}經本局施行原地車輛噪音檢驗，噪音量為${record['檢驗結果']}分貝，超過該車${record['管制標準']}分貝，違反噪音管制法第11條第1項規定。`;
+      } else if (record.態樣 === '未到檢') {
+        record['違反事實'] = `相對人所有車輛(車號：${record['車牌號碼']})未於指定時間前(${record['違反時間']})至指定地點(交通部公路總局高雄區監理所澎湖監理站)接受檢驗，違反噪音管制法第13條之規定。`;
+      } else {
+        record['違反事實'] = '';
+      }
+      return record;
+    });
+    // 3. 讀取 Word 模板，並將資料傳入模板中的迴圈區塊
     const content = fs.readFileSync(wordFile.path, 'binary');
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
