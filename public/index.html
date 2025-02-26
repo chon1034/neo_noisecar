@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>上傳 Excel 與 Word</title>
+</head>
+<body>
+  <h1>上傳 Excel 與 Word 模板</h1>
+  <form id="uploadForm" enctype="multipart/form-data">
+    <label for="excelFile">選擇 Excel 檔：</label>
+    <input type="file" id="excelFile" name="excelFile" accept=".xlsx,.xls" required><br><br>
+    <label for="wordFile">選擇 Word 模板：</label>
+    <input type="file" id="wordFile" name="wordFile" accept=".docx" required><br><br>
+    <button type="submit">上傳並產生 PDF</button>
+  </form>
+
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const formData = new FormData(this);
+      fetch('/upload', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('上傳或處理發生錯誤');
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        // 下載 PDF 檔案
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'merged.pdf';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      })
+      .catch(error => {
+        alert(error);
+      });
+    });
+  </script>
+</body>
+</html>
