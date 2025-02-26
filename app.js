@@ -75,7 +75,7 @@ app.post('/upload', upload.fields([
     const workbook = XLSX.readFile(excelFile.path);
     const sheetName = 'sheet1';
     const sheet = workbook.Sheets[sheetName];
-    const records = XLSX.utils.sheet_to_json(sheet);
+    let records = XLSX.utils.sheet_to_json(sheet);
     if (!records || records.length === 0) {
       return res.status(400).send('Excel 沒有資料');
     }
