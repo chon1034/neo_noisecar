@@ -105,8 +105,12 @@ app.post('/upload', upload.fields([
     console.log('DOCX 合併完成:', outputDocx);
 
     // 直接下載合併後的 DOCX 檔案，並先設定正確的 Content-Type
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    res.download(outputDocx, 'merged.docx', (err) => {
+    res.sendFile(outputDocx, {
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'Content-Disposition': 'attachment; filename="merged.docx"'
+      }
+    }, (err) => {
       if (err) {
         console.error('下載錯誤:', err);
       }
