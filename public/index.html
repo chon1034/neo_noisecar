@@ -1,51 +1,71 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <title>上傳 Excel 與 Word</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>合併 Word 檔案</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
-  <h1>上傳 Excel 與 Word 模板</h1>
-  <form id="uploadForm" enctype="multipart/form-data">
-    <label for="excelFile">選擇 Excel 檔：</label>
-    <input type="file" id="excelFile" name="excelFile" accept=".xlsx,.xls" required><br><br>
-    <label for="wordFile">選擇 Word 模板：</label>
-    <input type="file" id="wordFile" name="wordFile" accept=".docx" required><br><br>
-    <button type="submit">上傳並產生 PDF</button>
-  </form>
+  <div class="container mt-5">
+    <h1 class="mb-4">合併 Word 檔案</h1>
+    <!-- 上傳表單 -->
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div class="mb-3">
+        <label for="excelFile" class="form-label">Excel 檔案</label>
+        <input class="form-control" type="file" id="excelFile" name="excelFile" accept=".xlsx,.xls" required>
+      </div>
+      <div class="mb-3">
+        <label for="wordFile" class="form-label">Word 模板檔案</label>
+        <input class="form-control" type="file" id="wordFile" name="wordFile" accept=".docx" required>
+      </div>
+      <button type="submit" class="btn btn-primary">上傳並合併</button>
+    </form>
+    <!-- 合併完成後的下載區 -->
+    <div id="downloadSection" class="mt-4 d-none">
+      <div class="alert alert-success" role="alert">
+        合併完成！請點擊下方按鈕下載合併後的檔案。
+      </div>
+      <a id="downloadLink" href="#" class="btn btn-success" download="merged.docx">下載合併後的 DOCX 檔案</a>
+    </div>
+    <!-- 錯誤訊息區 -->
+    <div id="alertMessage" class="mt-3"></div>
+  </div>
 
-  <h1>合併檔案下載</h1>
-  <!-- 直接連結到伺服器上 output 資料夾中的 merged.docx -->
-  <p><a href="/output/merged.docx" download="merged.docx">點此下載合併後的 DOCX 檔案</a></p>
-  <!-- 若沒有透過 res.download 傳回下載檔案，你可以用這個連結直接取得 -->
-
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- 前端上傳與下載邏輯 -->
   <script>
-    document.getElementById('uploadForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const formData = new FormData(this);
-      fetch('/upload', {
-        method: 'POST',
-        body: formData
-      })
-      .then(response => {
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault(); // 阻止表單預設送出
+      const formData = new FormData(e.target);
+      
+      // 清除前次訊息並隱藏下載區
+      document.getElementById('alertMessage').innerHTML = '';
+      document.getElementById('downloadSection').classList.add('d-none');
+
+      try {
+        const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+        });
         if (!response.ok) {
-          throw new Error('上傳或處理發生錯誤!');
+          const errorText = await response.text();
+          document.getElementById('alertMessage').innerHTML = `<div class="alert alert-danger" role="alert">${errorText}</div>`;
+          return;
         }
-        return response.blob();
-      })
-      .then(blob => {
-        // 下載 PDF 檔案
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'merged.pdf';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-      })
-      .catch(error => {
-        alert(error);
-      });
+        // 取得合併後的 DOCX 檔案 Blob
+        const blob = await response.blob();
+        // 產生臨時 URL
+        const downloadUrl = window.URL.createObjectURL(blob);
+        // 設定下載連結 href 與顯示下載按鈕
+        const downloadLink = document.getElementById('downloadLink');
+        downloadLink.href = downloadUrl;
+        document.getElementById('downloadSection').classList.remove('d-none');
+      } catch (error) {
+        document.getElementById('alertMessage').innerHTML = `<div class="alert alert-danger" role="alert">發生錯誤：${error.message}</div>`;
+      }
     });
   </script>
 </body>
