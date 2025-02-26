@@ -33,12 +33,11 @@ fs.readdir(uploadDir, (err, files) => {
   }
 });
 
-// 設定 output 資料夾，並清空該資料夾以避免舊檔案干擾（例如 merged.pdf 殘留）
+// 設定 output 資料夾，並清空以避免遺留檔案（例如 merged.pdf 等）
 const outputDir = path.join(__dirname, 'output');
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir);
 } else {
-  // 清除 output 資料夾中的所有檔案
   fs.readdirSync(outputDir).forEach(file => {
     fs.unlinkSync(path.join(outputDir, file));
   });
@@ -59,7 +58,7 @@ const upload = multer({ storage });
 // 提供前端靜態頁面（前端 HTML 放在 public 資料夾）
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 上傳檔案的 API，預期上傳欄位名稱為 excelFile 與 wordFile
+// 上傳檔案 API，預期上傳欄位名稱為 excelFile 與 wordFile
 app.post('/upload', upload.fields([
   { name: 'excelFile', maxCount: 1 },
   { name: 'wordFile', maxCount: 1 }
@@ -72,7 +71,7 @@ app.post('/upload', upload.fields([
     // 設定輸出合併後的 DOCX 檔案路徑
     const outputDocx = path.join(outputDir, 'merged.docx');
 
-    // 1. 讀取 Excel 資料，將工作表 (假設名稱為 sheet1) 轉換為 JSON 陣列
+    // 1. 讀取 Excel 資料（假設工作表名稱為 sheet1）
     const workbook = XLSX.readFile(excelFile.path);
     const sheetName = 'sheet1';
     const sheet = workbook.Sheets[sheetName];
@@ -83,12 +82,15 @@ app.post('/upload', upload.fields([
     console.log('Excel 資料筆數:', records.length);
 
     // 2. 讀取 Word 模板並進行資料合併
-    // 請確保你的 Word 模板已修改為迴圈區塊格式，例如：
+    // 請確保你的 Word 模板已修改為迴圈區塊格式，並在每筆資料結尾加入分頁符號，例如：
     // {#records}
     // 姓名：{{姓名}}
     // 性別：{{性別}}
-    // ...其他欄位...
-    // [分頁符號]
+    // 出生年月日：{{出生年月日}}
+    // 住（居）所：{{住（居）所}}
+    // 車牌號碼：{{車牌號碼}}
+    // 違反時間：{{違反時間}}
+    // <w:p><w:r><w:br w:type="page"/></w:r></w:p>
     // {/records}
     const content = fs.readFileSync(wordFile.path, 'binary');
     const zip = new PizZip(content);
@@ -102,7 +104,7 @@ app.post('/upload', upload.fields([
     fs.writeFileSync(outputDocx, buf);
     console.log('DOCX 合併完成:', outputDocx);
 
-    // 直接下載合併後的 DOCX 檔案
+    // 直接下載合併後的 DOCX 檔案，確保副檔名為 .docx
     res.download(outputDocx, 'merged.docx', (err) => {
       if (err) {
         console.error('下載錯誤:', err);
@@ -114,7 +116,7 @@ app.post('/upload', upload.fields([
   }
 });
 
-// 啟動伺服器，監聽指定的 PORT
+// 啟動伺服器
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
