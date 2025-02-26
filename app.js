@@ -15,6 +15,23 @@ const uploadDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
+// 清空 uploads 資料夾
+fs.readdir(uploadDir, (err, files) => {
+  if (err) {
+    console.error('讀取 uploads 資料夾時發生錯誤:', err);
+  } else {
+    files.forEach(file => {
+      const filePath = path.join(uploadDir, file);
+      fs.unlink(filePath, err => {
+        if (err) {
+          console.error(`刪除檔案 ${file} 失敗:`, err);
+        } else {
+          console.log(`已刪除檔案: ${file}`);
+        }
+      });
+    });
+  }
+});
 
 // 設定 multer 存檔策略
 const storage = multer.diskStorage({
@@ -22,10 +39,12 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // 取原檔名
-    cb(null, file.originalname);
+    // 轉換編碼，將 file.originalname 從 latin1 轉成 utf8
+    let originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
+    cb(null, originalName);
   }
 });
+
 const upload = multer({ storage });
 
 // 提供前端靜態頁面
