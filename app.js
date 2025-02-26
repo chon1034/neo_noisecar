@@ -4,7 +4,6 @@ const fs = require('fs');
 const XLSX = require('xlsx');
 const PizZip = require('pizzip');
 const Docxtemplater = require('docxtemplater');
-const { exec } = require('child_process');
 const multer = require('multer');
 
 const app = express();
@@ -34,26 +33,22 @@ fs.readdir(uploadDir, (err, files) => {
   }
 });
 
-// 設定 multer 存檔策略（處理上傳檔案，並轉換檔名編碼以避免中文亂碼）
+// 設定 multer 存檔策略，處理上傳檔案並轉換檔名編碼以避免中文亂碼
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    // 將 file.originalname 從 latin1 轉成 utf8
     let originalName = Buffer.from(file.originalname, 'latin1').toString('utf8');
     cb(null, originalName);
   }
 });
 const upload = multer({ storage });
 
-// 提供前端靜態頁面（public 資料夾內放置前端 HTML、CSS、JS）
+// 提供前端靜態頁面（前端 HTML 放在 public 資料夾）
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 同時提供 output 資料夾作為靜態檔案路由，讓合併後的檔案可下載
-app.use('/output', express.static(path.join(__dirname, 'output')));
-
-// 上傳檔案的 API，預期上傳欄位名稱分別為 excelFile 與 wordFile
+// 上傳檔案的 API，預期上傳欄位名稱為 excelFile 與 wordFile
 app.post('/upload', upload.fields([
   { name: 'excelFile', maxCount: 1 },
   { name: 'wordFile', maxCount: 1 }
@@ -69,10 +64,9 @@ app.post('/upload', upload.fields([
       fs.mkdirSync(outputDir);
     }
     const outputDocx = path.join(outputDir, 'merged.docx');
-    const outputPdf = path.join(outputDir, 'merged.pdf');
 
     // 1. 讀取 Excel 資料
-    // 讀取 Excel 檔，並將指定工作表（這裡假設工作表名稱為 sheet1）的資料轉換為 JSON 陣列
+    // 將指定工作表（此例中假設工作表名稱為 sheet1）的資料轉換成 JSON 陣列
     const workbook = XLSX.readFile(excelFile.path);
     const sheetName = 'sheet1';
     const sheet = workbook.Sheets[sheetName];
@@ -83,13 +77,13 @@ app.post('/upload', upload.fields([
     console.log('Excel 資料筆數:', records.length);
 
     // 2. 讀取 Word 模板並進行資料合併
-    // 注意：請先修改你的 Word 模板，將需要重複的區塊包在 {#records} 和 {/records} 中，
-    // 並在區塊結尾加入分頁符號，確保每筆資料顯示在單獨一頁。
+    // 注意：請先修改你的 Word 模板，將需要重複的區塊包在 {#records} 與 {/records} 之間，
+    // 並在區塊結尾加入分頁符號，確保每筆資料顯示在單獨一頁
     const content = fs.readFileSync(wordFile.path, 'binary');
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
     
-    // 傳入所有 Excel 資料，並將資料對應到模板中的 records 迴圈區塊
+    // 傳入所有 Excel 資料，並映射到模板中的 records 迴圈區塊
     doc.render({ records: records });
     
     // 產生合併後的 DOCX 檔案
@@ -97,23 +91,11 @@ app.post('/upload', upload.fields([
     fs.writeFileSync(outputDocx, buf);
     console.log('DOCX 合併完成:', outputDocx);
 
-    // 3. 使用 LibreOffice 將 DOCX 轉換成 PDF
-    // 請確認 Linux 系統上已安裝 LibreOffice 並且 soffice 的路徑正確（此例中使用 /usr/bin/soffice）
-    const sofficePath = '/usr/bin/soffice';
-    const cmd = `${sofficePath} --headless --convert-to pdf "${outputDocx}" --outdir "${outputDir}"`;
-    exec(cmd, (error, stdout, stderr) => {
-      if (error) {
-        console.error(`PDF 轉換錯誤: ${error}`);
-        return res.status(500).send('PDF 轉換錯誤');
+    // 直接下載合併後的 Word 檔案
+    res.download(outputDocx, 'merged.docx', (err) => {
+      if (err) {
+        console.error('下載錯誤:', err);
       }
-      console.log('PDF 轉換結果:', stdout);
-
-      // 4. 回傳一個簡單的 HTML 頁面，提供合併後的 DOCX 與 PDF 下載連結
-      res.send(`
-        <h2>合併完成！</h2>
-        <p><a href="/output/merged.docx" download>下載合併後的 Word 檔 (.docx)</a></p>
-        <p><a href="/output/merged.pdf" download>下載合併後的 PDF 檔 (.pdf)</a></p>
-      `);
     });
   } catch (err) {
     console.error('伺服器錯誤:', err);
@@ -121,7 +103,7 @@ app.post('/upload', upload.fields([
   }
 });
 
-// 啟動伺服器，監聽指定的 PORT
+// 啟動伺服器，監聽指定 PORT
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
