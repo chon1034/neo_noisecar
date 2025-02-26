@@ -24,7 +24,7 @@
       })
       .then(response => {
         if (!response.ok) {
-          throw new Error('上傳或處理發生錯誤');
+          throw new Error('上傳或處理發生錯誤!');
         }
         return response.blob();
       })
