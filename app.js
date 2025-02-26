@@ -45,10 +45,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// 提供前端靜態頁面（前端 HTML 放在 public 資料夾）
+// 提供前端靜態頁面（將前端 HTML、CSS、JS 放在 public 資料夾）
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 上傳檔案的 API，預期上傳欄位名稱為 excelFile 與 wordFile
+// 上傳檔案 API，預期上傳欄位名稱為 excelFile 與 wordFile
 app.post('/upload', upload.fields([
   { name: 'excelFile', maxCount: 1 },
   { name: 'wordFile', maxCount: 1 }
@@ -58,7 +58,7 @@ app.post('/upload', upload.fields([
     const excelFile = req.files['excelFile'][0];
     const wordFile = req.files['wordFile'][0];
 
-    // 建立暫存輸出目錄
+    // 建立輸出目錄
     const outputDir = path.join(__dirname, 'output');
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir);
@@ -66,7 +66,7 @@ app.post('/upload', upload.fields([
     const outputDocx = path.join(outputDir, 'merged.docx');
 
     // 1. 讀取 Excel 資料
-    // 將指定工作表（此例中假設工作表名稱為 sheet1）的資料轉換成 JSON 陣列
+    // 假設工作表名稱為 sheet1，讀取 Excel 轉換成 JSON 陣列，每一筆資料代表一筆記錄
     const workbook = XLSX.readFile(excelFile.path);
     const sheetName = 'sheet1';
     const sheet = workbook.Sheets[sheetName];
@@ -77,13 +77,13 @@ app.post('/upload', upload.fields([
     console.log('Excel 資料筆數:', records.length);
 
     // 2. 讀取 Word 模板並進行資料合併
-    // 注意：請先修改你的 Word 模板，將需要重複的區塊包在 {#records} 與 {/records} 之間，
-    // 並在區塊結尾加入分頁符號，確保每筆資料顯示在單獨一頁
+    // 請先修改你的 Word 模板，使需要重複的區段包在 {#records} 與 {/records} 之間，
+    // 並在每筆資料區塊的結尾插入分頁符號，確保每筆資料各佔一頁。
     const content = fs.readFileSync(wordFile.path, 'binary');
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
     
-    // 傳入所有 Excel 資料，並映射到模板中的 records 迴圈區塊
+    // 傳入所有 Excel 資料，並將其對應到模板中的 records 迴圈區塊
     doc.render({ records: records });
     
     // 產生合併後的 DOCX 檔案
@@ -103,7 +103,7 @@ app.post('/upload', upload.fields([
   }
 });
 
-// 啟動伺服器，監聽指定 PORT
+// 啟動伺服器
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
