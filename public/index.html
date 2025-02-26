@@ -14,6 +14,11 @@
     <button type="submit">上傳並產生 PDF</button>
   </form>
 
+  <h1>合併檔案下載</h1>
+  <!-- 直接連結到伺服器上 output 資料夾中的 merged.docx -->
+  <p><a href="/output/merged.docx" download="merged.docx">點此下載合併後的 DOCX 檔案</a></p>
+  <!-- 若沒有透過 res.download 傳回下載檔案，你可以用這個連結直接取得 -->
+
   <script>
     document.getElementById('uploadForm').addEventListener('submit', function(e) {
       e.preventDefault();
