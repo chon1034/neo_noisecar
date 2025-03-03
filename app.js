@@ -63,8 +63,10 @@ app.use('/output', express.static(path.join(__dirname, 'output')));
 
 app.get('/download', (req, res) => {
   const filePath = path.join(outputDir, 'merged.docx');
-  // 使用 res.download() 會自動設定 Content-Disposition 為 attachment
-  res.download(filePath, 'merged.docx', (err) => {
+  // 強制下載：將 Content-Type 設為 application/octet-stream
+  res.setHeader("Content-Type", "application/octet-stream");
+  res.setHeader("Content-Disposition", "attachment; filename=merged.docx");
+  res.sendFile(filePath, (err) => {
     if (err) {
       console.error('下載檔案錯誤:', err);
       res.status(500).send('下載檔案錯誤');
