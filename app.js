@@ -61,6 +61,17 @@ app.use(express.static(path.join(__dirname, 'public')));
 // 透過 express.static 提供 output 資料夾中的檔案下載
 app.use('/output', express.static(path.join(__dirname, 'output')));
 
+app.get('/download', (req, res) => {
+  const filePath = path.join(outputDir, 'merged.docx');
+  // 使用 res.download() 會自動設定 Content-Disposition 為 attachment
+  res.download(filePath, 'merged.docx', (err) => {
+    if (err) {
+      console.error('下載檔案錯誤:', err);
+      res.status(500).send('下載檔案錯誤');
+    }
+  });
+});
+
 // 上傳檔案 API，預期上傳欄位名稱為 excelFile 與 wordFile
 app.post('/upload', upload.fields([
   { name: 'excelFile', maxCount: 1 },
