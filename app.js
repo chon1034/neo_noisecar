@@ -43,7 +43,7 @@ if (!fs.existsSync(outputDir)) {
   });
 }
 
-// 設定 multer 存檔策略，處理上傳檔案並轉換檔名編碼以避免中文亂碼
+// 設定 multer 存檔策略，處理上傳檔案並轉換檔名編碼避免中文亂碼
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -84,17 +84,6 @@ app.post('/upload', upload.fields([
     }
     console.log('Excel 資料筆數:', records.length);
 
-    // 2. 讀取 Word 模板並進行資料合併
-    // 請確保你的 Word 模板已修改為迴圈區塊格式，並在每筆資料結尾加入分頁符號，例如：
-    // {#records}
-    // 姓名：{{姓名}}
-    // 性別：{{性別}}
-    // 出生年月日：{{出生年月日}}
-    // 住（居）所：{{住（居）所}}
-    // 車牌號碼：{{車牌號碼}}
-    // 違反時間：{{違反時間}}
-    // <w:p><w:r><w:br w:type="page"/></w:r></w:p>
-    // {/records}
     // 2. 根據「態樣」欄位產生「違反事實」
     records = records.map(record => {
       if (record.態樣 === '超標') {
@@ -106,28 +95,39 @@ app.post('/upload', upload.fields([
       }
       return record;
     });
-    // 3. 讀取 Word 模板，並將資料傳入模板中的迴圈區塊
+
+    // 3. 讀取 Word 模板並進行資料合併
+    // 請先確認你的 Word 模板已修改為迴圈區塊格式，
+    // 例如：
+    // {#records}
+    // 姓名：{{姓名}}
+    // 性別：{{性別}}
+    // 出生年月日：{{出生年月日}}
+    // 住（居）所：{{住（居）所}}
+    // 車牌號碼：{{車牌號碼}}
+    // 違反時間：{{違反時間}}
+    // 違反事實：{{違反事實}}
+    // <w:p><w:r><w:br w:type="page"/></w:r></w:p>
+    // {/records}
     const content = fs.readFileSync(wordFile.path, 'binary');
     const zip = new PizZip(content);
     const doc = new Docxtemplater(zip, { paragraphLoop: true, linebreaks: true });
-    
-    // 將所有 Excel 資料傳入模板中的 records 迴圈區塊
+    // 傳入所有 Excel 資料到模板中的 records 迴圈區塊
     doc.render({ records: records });
     
-    // 產生合併後的 DOCX 檔案
+    // 4. 產生合併後的 DOCX 檔案
     const buf = doc.getZip().generate({ type: 'nodebuffer' });
     fs.writeFileSync(outputDocx, buf);
     console.log('DOCX 合併完成:', outputDocx);
 
-
+    // 回傳 JSON 物件，包含合併後檔案的 URL
+    res.json({ fileUrl: '/output/merged.docx' });
   } catch (err) {
     console.error('伺服器錯誤:', err);
     res.status(500).send('伺服器錯誤');
   }
 });
 
-
-// 啟動伺服器
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
