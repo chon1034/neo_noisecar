@@ -115,7 +115,7 @@ app.post('/upload', upload.fields([
     const buf = doc.getZip().generate({ type: 'nodebuffer' });
     fs.writeFileSync(outputDocx, buf);
     console.log('DOCX 合併完成:', outputDocx);
-
+    res.json({ fileUrl: '/output/merged.docx' });
 
   } catch (err) {
     console.error('伺服器錯誤:', err);
