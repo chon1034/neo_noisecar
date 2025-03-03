@@ -58,6 +58,9 @@ const upload = multer({ storage });
 // 提供前端靜態頁面（前端 HTML 放在 public 資料夾）
 app.use(express.static(path.join(__dirname, 'public')));
 
+// 透過 express.static 提供 output 資料夾中的檔案下載
+app.use('/output', express.static(path.join(__dirname, 'output')));
+
 // 上傳檔案 API，預期上傳欄位名稱為 excelFile 與 wordFile
 app.post('/upload', upload.fields([
   { name: 'excelFile', maxCount: 1 },
@@ -123,7 +126,6 @@ app.post('/upload', upload.fields([
   }
 });
 
-app.use('/output', express.static(path.join(__dirname, 'output')));
 
 // 啟動伺服器
 app.listen(PORT, () => {

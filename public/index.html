@@ -55,11 +55,10 @@
           document.getElementById('alertMessage').innerHTML = `<div class="alert alert-danger" role="alert">${errorText}</div>`;
           return;
         }
-        // 取得合併後的 DOCX 檔案 Blob
-        const blob = await response.blob();
-        // 產生臨時 URL
-        const downloadUrl = window.URL.createObjectURL(blob);
-        // 設定下載連結 href 與顯示下載按鈕
+        // 解析回傳的 JSON 物件，取得檔案 URL
+        const result = await response.json();
+        const downloadUrl = result.fileUrl;
+        // 設定下載連結 href 與顯示下載區
         const downloadLink = document.getElementById('downloadLink');
         downloadLink.href = downloadUrl;
         document.getElementById('downloadSection').classList.remove('d-none');
